@@ -783,7 +783,20 @@ export default function Dashboard() {
     const rate = Number(saleRate);
     const rent = Number(saleDriverRent) || 0;
     const totalAmount = liters * rate + rent;
-    const paidAmount = saleType === 'Cash' ? totalAmount : (Number(saleAmountPaid) || 0);
+    
+    // For cash sales, use the entered cash received amount (required)
+    // For credit sales, use the optional amount paid
+    let paidAmount: number;
+    if (saleType === 'Cash') {
+      if (!saleAmountPaid || isNaN(Number(saleAmountPaid)) || Number(saleAmountPaid) <= 0) {
+        showToastMessage('Please enter the cash received amount for this sale.', 'error');
+        return;
+      }
+      paidAmount = Number(saleAmountPaid);
+    } else {
+      paidAmount = Number(saleAmountPaid) || 0;
+    }
+    
     const creditOwed = totalAmount - paidAmount;
     const billNo = saleBillNumber.trim() || `B-${1000 + sales.length + 1}`;
     const prodName = saleProduct;
@@ -3395,6 +3408,30 @@ export default function Dashboard() {
                             onChange={(e) => setSaleAmountPaid(e.target.value)}
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-sm font-semibold text-slate-800"
                           />
+                        </div>
+                      )}
+                      {saleType === 'Cash' && (
+                        <div>
+                          <label className="block text-xs font-bold text-emerald-600 uppercase mb-1">💰 Cash Received (PKR) *</label>
+                          <input
+                            type="number"
+                            placeholder="Enter amount of cash received"
+                            value={saleAmountPaid}
+                            onChange={(e) => setSaleAmountPaid(e.target.value)}
+                            className="w-full px-4 py-3 bg-emerald-50 border-2 border-emerald-300 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all text-sm font-semibold text-slate-800"
+                          />
+                          {saleAmountPaid && saleLiters && saleRate && (
+                            <div className="mt-2 text-xs text-slate-600">
+                              Total Due: PKR {(Number(saleLiters) * Number(saleRate)).toLocaleString()} | 
+                              Received: PKR {Number(saleAmountPaid).toLocaleString()} | 
+                              <span className={Number(saleAmountPaid) >= Number(saleLiters) * Number(saleRate) ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold'}>
+                                {Number(saleAmountPaid) >= Number(saleLiters) * Number(saleRate) 
+                                  ? ` Change: PKR ${(Number(saleAmountPaid) - Number(saleLiters) * Number(saleRate)).toLocaleString()}`
+                                  : ` Short: PKR ${(Number(saleLiters) * Number(saleRate) - Number(saleAmountPaid)).toLocaleString()}`
+                                }
+                              </span>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
