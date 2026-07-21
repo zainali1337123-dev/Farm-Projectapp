@@ -1,0 +1,6 @@
+{
+  "name": "Danish Farm Dashboard",
+  "description": "Frontend Dashboard for Danish Farm dairy business, tracking production, distribution, customers, milkmen, and finances.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
