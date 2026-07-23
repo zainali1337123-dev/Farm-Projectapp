@@ -299,6 +299,17 @@ export default function Dashboard() {
 
   // Search state for Today's Sales
   const [salesSearch, setSalesSearch] = useState('');
+  const [expenseSearch, setExpenseSearch] = useState('');
+  
+  // Date selection state
+  const [salesSelectedDate, setSalesSelectedDate] = useState(todayStr);
+  const [expenseSelectedDate, setExpenseSelectedDate] = useState(todayStr);
+  
+  // Edit state for sales and expenses
+  const [editingSaleId, setEditingSaleId] = useState<string | null>(null);
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+  const [editSaleData, setEditSaleData] = useState<any>(null);
+  const [editExpenseData, setEditExpenseData] = useState<any>(null);
 
   // Success Toast message
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -1228,6 +1239,60 @@ export default function Dashboard() {
     });
       showToastMessage(`Successfully deleted Bill #${saleToDelete.billNumber}!`);
     }
+  };
+
+  // Edit Sale Function
+  const handleEditSale = (sale: Sale) => {
+    setEditingSaleId(sale.id);
+    setEditSaleData({ ...sale });
+  };
+
+  const handleSaveSaleEdit = (saleId: string) => {
+    if (!editSaleData) return;
+    
+    const updatedSales = sales.map(s => s.id === saleId ? editSaleData : s);
+    setSales(updatedSales);
+    
+    if (isSupabaseConfigured()) {
+      saveSales(updatedSales).catch(e => console.error("Supabase Sync Error:", e));
+    }
+    
+    localStorage.setItem('df_sales', JSON.stringify(updatedSales));
+    showToastMessage('Sale updated successfully!');
+    setEditingSaleId(null);
+    setEditSaleData(null);
+  };
+
+  const handleCancelSaleEdit = () => {
+    setEditingSaleId(null);
+    setEditSaleData(null);
+  };
+
+  // Edit Expense Function
+  const handleEditExpense = (expense: Expense) => {
+    setEditingExpenseId(expense.id);
+    setEditExpenseData({ ...expense });
+  };
+
+  const handleSaveExpenseEdit = (expenseId: string) => {
+    if (!editExpenseData) return;
+    
+    const updatedExpenses = expenses.map(e => e.id === expenseId ? editExpenseData : e);
+    setExpenses(updatedExpenses);
+    
+    if (isSupabaseConfigured()) {
+      saveExpenses(updatedExpenses).catch(e => console.error("Supabase Sync Error:", e));
+    }
+    
+    localStorage.setItem('df_expenses', JSON.stringify(updatedExpenses));
+    showToastMessage('Expense updated successfully!');
+    setEditingExpenseId(null);
+    setEditExpenseData(null);
+  };
+
+  const handleCancelExpenseEdit = () => {
+    setEditingExpenseId(null);
+    setEditExpenseData(null);
   };
 
   // Filter activities
@@ -3004,7 +3069,17 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  {/* Date Picker */}
+                  <div className="relative">
+                    <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 block mb-1">Select Date</label>
+                    <input
+                      type="date"
+                      value={salesSelectedDate}
+                      onChange={(e) => setSalesSelectedDate(e.target.value)}
+                      className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-slate-800 font-medium"
+                    />
+                  </div>
+
                   {/* Search bar */}
                   <div className="relative">
                     <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
@@ -3063,8 +3138,8 @@ export default function Dashboard() {
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-700 text-xs">
                       {(() => {
-                        const todaySales = sales.filter(s => s.date === todayStr);
-                        const filteredTodaySales = todaySales.filter(s => 
+                        const selectedSales = sales.filter(s => s.date === salesSelectedDate);
+                        const filteredTodaySales = selectedSales.filter(s => 
                           s.customerName.toLowerCase().includes(salesSearch.toLowerCase())
                         );
 
@@ -3116,14 +3191,42 @@ export default function Dashboard() {
                                 {remaining > 0 ? remaining.toLocaleString() : '—'}
                               </td>
                               <td className="py-4 px-4">
-                                <div className="flex items-center justify-center">
-                                  <button
-                                    onClick={() => handleDeleteSale(sale.id)}
-                                    className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
-                                    title="Delete Sale"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
+                                <div className="flex items-center justify-center gap-2">
+                                  {editingSaleId === sale.id ? (
+                                    <>
+                                      <button
+                                        onClick={() => handleSaveSaleEdit(sale.id)}
+                                        className="p-1.5 hover:bg-emerald-50 text-emerald-600 hover:text-emerald-700 rounded-lg transition-colors cursor-pointer"
+                                        title="Save Changes"
+                                      >
+                                        <Check className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        onClick={handleCancelSaleEdit}
+                                        className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-lg transition-colors cursor-pointer"
+                                        title="Cancel"
+                                      >
+                                        <X className="w-4 h-4" />
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <button
+                                        onClick={() => handleEditSale(sale)}
+                                        className="p-1.5 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-lg transition-colors cursor-pointer"
+                                        title="Edit Sale"
+                                      >
+                                        <Edit className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteSale(sale.id)}
+                                        className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
+                                        title="Delete Sale"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </>
+                                  )}
                                 </div>
                               </td>
                             </tr>
