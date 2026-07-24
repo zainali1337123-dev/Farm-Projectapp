@@ -262,262 +262,73 @@ export async function fetchSupabaseData() {
   }
 }
 
-// Global batch upsert wrappers with improved error handling
+// Global batch upsert wrappers
 export async function saveProductionLogs(logs: any[]) {
-  if (!supabase) {
-    console.warn('Supabase not configured - skipping production logs sync');
-    return;
-  }
-  try {
-    if (!logs || logs.length === 0) {
-      console.log('No production logs to save');
-      return;
-    }
-    const dbRows = logs.map(mapProductionLogToDb);
-    const { data, error } = await supabase.from('production_logs').upsert(dbRows);
-    if (error) {
-      console.error('Error saving production logs to Supabase:', error);
-      throw error;
-    }
-    console.log('✓ Production logs synced to Supabase successfully');
-    return data;
-  } catch (err) {
-    console.error('Failed to save production logs:', err);
-    throw err;
-  }
+  if (!supabase) return;
+  const dbRows = logs.map(mapProductionLogToDb);
+  await supabase.from('production_logs').upsert(dbRows);
 }
 
 export async function saveDispatches(dispatches: any[]) {
-  if (!supabase) {
-    console.warn('Supabase not configured - skipping dispatches sync');
-    return;
-  }
-  try {
-    if (!dispatches || dispatches.length === 0) {
-      console.log('No dispatches to save');
-      return;
-    }
-    const dbRows = dispatches.map(mapDispatchToDb);
-    const { data, error } = await supabase.from('dispatches').upsert(dbRows);
-    if (error) {
-      console.error('Error saving dispatches to Supabase:', error);
-      throw error;
-    }
-    console.log('✓ Dispatches synced to Supabase successfully');
-    return data;
-  } catch (err) {
-    console.error('Failed to save dispatches:', err);
-    throw err;
-  }
+  if (!supabase) return;
+  const dbRows = dispatches.map(mapDispatchToDb);
+  await supabase.from('dispatches').upsert(dbRows);
 }
 
 export async function saveCustomers(customers: any[]) {
-  if (!supabase) {
-    console.warn('Supabase not configured - skipping customers sync');
-    return;
-  }
-  try {
-    if (!customers || customers.length === 0) {
-      console.log('No customers to save');
-      return;
-    }
-    const dbRows = customers.map(mapCustomerToDb);
-    const { data, error } = await supabase.from('customers').upsert(dbRows);
-    if (error) {
-      console.error('Error saving customers to Supabase:', error);
-      throw error;
-    }
-    console.log('✓ Customers synced to Supabase successfully');
-    return data;
-  } catch (err) {
-    console.error('Failed to save customers:', err);
-    throw err;
-  }
+  if (!supabase) return;
+  const dbRows = customers.map(mapCustomerToDb);
+  await supabase.from('customers').upsert(dbRows);
 }
 
 export async function saveSales(sales: any[]) {
-  if (!supabase) {
-    console.warn('Supabase not configured - skipping sales sync');
-    return;
-  }
-  try {
-    if (!sales || sales.length === 0) {
-      console.log('No sales to save');
-      return;
-    }
-    const dbRows = sales.map(mapSaleToDb);
-    const { data, error } = await supabase.from('sales').upsert(dbRows);
-    if (error) {
-      console.error('Error saving sales to Supabase:', error);
-      throw error;
-    }
-    console.log('✓ Sales synced to Supabase successfully');
-    return data;
-  } catch (err) {
-    console.error('Failed to save sales:', err);
-    throw err;
-  }
+  if (!supabase) return;
+  const dbRows = sales.map(mapSaleToDb);
+  await supabase.from('sales').upsert(dbRows);
 }
 
 export async function deleteSaleFromDb(saleId: string) {
-  if (!supabase) {
-    console.warn('Supabase not configured - skipping delete operation');
-    return;
-  }
-  try {
-    const { error } = await supabase.from('sales').delete().eq('id', saleId);
-    if (error) {
-      console.error('Error deleting sale from Supabase:', error);
-      throw error;
-    }
-    console.log('✓ Sale deleted from Supabase successfully');
-  } catch (err) {
-    console.error('Failed to delete sale:', err);
-    throw err;
-  }
+  if (!supabase) return;
+  await supabase.from('sales').delete().eq('id', saleId);
 }
 
 export async function saveCustomerPayments(payments: any[]) {
-  if (!supabase) {
-    console.warn('Supabase not configured - skipping customer payments sync');
-    return;
-  }
-  try {
-    if (!payments || payments.length === 0) {
-      console.log('No customer payments to save');
-      return;
-    }
-    const dbRows = payments.map(mapCustomerPaymentToDb);
-    const { data, error } = await supabase.from('customer_payments').upsert(dbRows);
-    if (error) {
-      console.error('Error saving customer payments to Supabase:', error);
-      throw error;
-    }
-    console.log('✓ Customer payments synced to Supabase successfully');
-    return data;
-  } catch (err) {
-    console.error('Failed to save customer payments:', err);
-    throw err;
-  }
+  if (!supabase) return;
+  const dbRows = payments.map(mapCustomerPaymentToDb);
+  await supabase.from('customer_payments').upsert(dbRows);
 }
 
 export async function saveExpenses(expenses: any[]) {
-  if (!supabase) {
-    console.warn('Supabase not configured - skipping expenses sync');
-    return;
-  }
-  try {
-    if (!expenses || expenses.length === 0) {
-      console.log('No expenses to save');
-      return;
-    }
-    const dbRows = expenses.map(mapExpenseToDb);
-    const { data, error } = await supabase.from('expenses').upsert(dbRows);
-    if (error) {
-      console.error('Error saving expenses to Supabase:', error);
-      throw error;
-    }
-    console.log('✓ Expenses synced to Supabase successfully');
-    return data;
-  } catch (err) {
-    console.error('Failed to save expenses:', err);
-    throw err;
-  }
+  if (!supabase) return;
+  const dbRows = expenses.map(mapExpenseToDb);
+  await supabase.from('expenses').upsert(dbRows);
 }
 
 export async function saveActivities(activities: any[]) {
-  if (!supabase) {
-    console.warn('Supabase not configured - skipping activities sync');
-    return;
-  }
-  try {
-    if (!activities || activities.length === 0) {
-      console.log('No activities to save');
-      return;
-    }
-    const dbRows = activities.map(mapActivityToDb);
-    const { data, error } = await supabase.from('activities').upsert(dbRows);
-    if (error) {
-      console.error('Error saving activities to Supabase:', error);
-      throw error;
-    }
-    console.log('✓ Activities synced to Supabase successfully');
-    return data;
-  } catch (err) {
-    console.error('Failed to save activities:', err);
-    throw err;
-  }
+  if (!supabase) return;
+  const dbRows = activities.map(mapActivityToDb);
+  await supabase.from('activities').upsert(dbRows);
 }
 
 export async function saveMilkmen(milkmen: any[]) {
-  if (!supabase) {
-    console.warn('Supabase not configured - skipping milkmen sync');
-    return;
-  }
-  try {
-    if (!milkmen || milkmen.length === 0) {
-      console.log('No milkmen to save');
-      return;
-    }
-    const dbRows = milkmen.map(mapMilkmanToDb);
-    const { data, error } = await supabase.from('milkmen').upsert(dbRows);
-    if (error) {
-      console.error('Error saving milkmen to Supabase:', error);
-      throw error;
-    }
-    console.log('✓ Milkmen synced to Supabase successfully');
-    return data;
-  } catch (err) {
-    console.error('Failed to save milkmen:', err);
-    throw err;
-  }
+  if (!supabase) return;
+  const dbRows = milkmen.map(mapMilkmanToDb);
+  await supabase.from('milkmen').upsert(dbRows);
 }
 
 export async function saveMilkmanPayments(payments: any[]) {
-  if (!supabase) {
-    console.warn('Supabase not configured - skipping milkman payments sync');
-    return;
-  }
-  try {
-    if (!payments || payments.length === 0) {
-      console.log('No milkman payments to save');
-      return;
-    }
-    const dbRows = payments.map(mapMilkmanPaymentToDb);
-    const { data, error } = await supabase.from('milkman_payments').upsert(dbRows);
-    if (error) {
-      console.error('Error saving milkman payments to Supabase:', error);
-      throw error;
-    }
-    console.log('✓ Milkman payments synced to Supabase successfully');
-    return data;
-  } catch (err) {
-    console.error('Failed to save milkman payments:', err);
-    throw err;
-  }
+  if (!supabase) return;
+  const dbRows = payments.map(mapMilkmanPaymentToDb);
+  await supabase.from('milkman_payments').upsert(dbRows);
 }
 
 export async function saveLivestockCounts(cows: number, buffaloes: number, calves: number) {
-  if (!supabase) {
-    console.warn('Supabase not configured - skipping livestock sync');
-    return;
-  }
-  try {
-    const { data, error } = await supabase.from('livestock').upsert({
-      id: 'current',
-      cows,
-      buffaloes,
-      calves,
-      updated_at: new Date().toISOString()
-    });
-    if (error) {
-      console.error('Error saving livestock counts to Supabase:', error);
-      throw error;
-    }
-    console.log('✓ Livestock counts synced to Supabase successfully');
-    return data;
-  } catch (err) {
-    console.error('Failed to save livestock counts:', err);
-    throw err;
-  }
+  if (!supabase) return;
+  await supabase.from('livestock').upsert({
+    id: 'current',
+    cows,
+    buffaloes,
+    calves,
+    updated_at: new Date().toISOString()
+  });
 }

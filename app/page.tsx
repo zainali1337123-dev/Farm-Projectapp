@@ -149,19 +149,6 @@ interface MilkmanPayment {
   notes?: string;
 }
 
-interface SaveStateParams {
-  production?: ProductionLog[];
-  dispatches?: Dispatch[];
-  customers?: Customer[];
-  sales?: Sale[];
-  expenses?: Expense[];
-  activities?: Activity[];
-  milkmen?: Milkman[];
-  customerPayments?: CustomerPayment[];
-  milkmanPayments?: MilkmanPayment[];
-}
-
-
 // Initial Mock Seed Data
 const INITIAL_MILKMEN: Milkman[] = [
   { id: 'm-1', name: 'Bashir Ahmad', phone: '0300-1234567', status: 'On Route', assignedLiters: 120, cashCollected: 16000, outstandingCredit: 8000 },
@@ -299,17 +286,8 @@ export default function Dashboard() {
 
   // Search state for Today's Sales
   const [salesSearch, setSalesSearch] = useState('');
-  const [expenseSearch, setExpenseSearch] = useState('');
-  
-  // Date selection state
-  const [salesSelectedDate, setSalesSelectedDate] = useState(todayStr);
-  const [expenseSelectedDate, setExpenseSelectedDate] = useState(todayStr);
-  
-  // Edit state for sales and expenses
-  const [editingSaleId, setEditingSaleId] = useState<string | null>(null);
-  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
-  const [editSaleData, setEditSaleData] = useState<any>(null);
-  const [editExpenseData, setEditExpenseData] = useState<any>(null);
+  const [selectedSalesDate, setSelectedSalesDate] = useState('2026-07-16');
+  const [selectedExpenseDate, setSelectedExpenseDate] = useState('2026-07-16');
 
   // Success Toast message
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -427,80 +405,78 @@ export default function Dashboard() {
   }, []);
 
   // Save to local storage and Supabase helper
-  const saveState = (params: SaveStateParams) => {
-    const {
-      production,
-      dispatches,
-      customers,
-      sales,
-      expenses,
-      activities,
-      milkmen,
-      customerPayments,
-      milkmanPayments
-    } = params;
-
-    if (production) {
-      setProductionLogs(production);
-      localStorage.setItem('df_production', JSON.stringify(production));
+  const saveState = (
+    updatedProd?: ProductionLog[], 
+    updatedDisp?: Dispatch[], 
+    updatedCust?: Customer[], 
+    updatedSales?: Sale[], 
+    updatedExp?: Expense[], 
+    updatedAct?: Activity[],
+    updatedMilk?: Milkman[],
+    updatedPayments?: CustomerPayment[],
+    updatedMilkmanPayments?: MilkmanPayment[]
+  ) => {
+    if (updatedProd) {
+      setProductionLogs(updatedProd);
+      localStorage.setItem('df_production', JSON.stringify(updatedProd));
       if (isSupabaseConfigured()) {
-        saveProductionLogs(production).catch(e => console.error("Supabase Sync Error:", e));
+        saveProductionLogs(updatedProd).catch(e => console.error("Supabase Sync Error:", e));
       }
     }
-    if (dispatches) {
-      setDispatches(dispatches);
-      localStorage.setItem('df_dispatches', JSON.stringify(dispatches));
+    if (updatedDisp) {
+      setDispatches(updatedDisp);
+      localStorage.setItem('df_dispatches', JSON.stringify(updatedDisp));
       if (isSupabaseConfigured()) {
-        saveDispatches(dispatches).catch(e => console.error("Supabase Sync Error:", e));
+        saveDispatches(updatedDisp).catch(e => console.error("Supabase Sync Error:", e));
       }
     }
-    if (customers) {
-      setCustomers(customers);
-      localStorage.setItem('df_customers', JSON.stringify(customers));
+    if (updatedCust) {
+      setCustomers(updatedCust);
+      localStorage.setItem('df_customers', JSON.stringify(updatedCust));
       if (isSupabaseConfigured()) {
-        saveCustomers(customers).catch(e => console.error("Supabase Sync Error:", e));
+        saveCustomers(updatedCust).catch(e => console.error("Supabase Sync Error:", e));
       }
     }
-    if (sales) {
-      setSales(sales);
-      localStorage.setItem('df_sales', JSON.stringify(sales));
+    if (updatedSales) {
+      setSales(updatedSales);
+      localStorage.setItem('df_sales', JSON.stringify(updatedSales));
       if (isSupabaseConfigured()) {
-        saveSales(sales).catch(e => console.error("Supabase Sync Error:", e));
+        saveSales(updatedSales).catch(e => console.error("Supabase Sync Error:", e));
       }
     }
-    if (customerPayments) {
-      setCustomerPayments(customerPayments);
-      localStorage.setItem('df_payments', JSON.stringify(customerPayments));
+    if (updatedPayments) {
+      setCustomerPayments(updatedPayments);
+      localStorage.setItem('df_payments', JSON.stringify(updatedPayments));
       if (isSupabaseConfigured()) {
-        saveCustomerPayments(customerPayments).catch(e => console.error("Supabase Sync Error:", e));
+        saveCustomerPayments(updatedPayments).catch(e => console.error("Supabase Sync Error:", e));
       }
     }
-    if (expenses) {
-      setExpenses(expenses);
-      localStorage.setItem('df_expenses', JSON.stringify(expenses));
+    if (updatedExp) {
+      setExpenses(updatedExp);
+      localStorage.setItem('df_expenses', JSON.stringify(updatedExp));
       if (isSupabaseConfigured()) {
-        saveExpenses(expenses).catch(e => console.error("Supabase Sync Error:", e));
+        saveExpenses(updatedExp).catch(e => console.error("Supabase Sync Error:", e));
       }
     }
-    if (activities) {
-      setActivities(activities);
-      localStorage.setItem('df_activities', JSON.stringify(activities));
+    if (updatedAct) {
+      setActivities(updatedAct);
+      localStorage.setItem('df_activities', JSON.stringify(updatedAct));
       if (isSupabaseConfigured()) {
-        saveActivities(activities).catch(e => console.error("Supabase Sync Error:", e));
+        saveActivities(updatedAct).catch(e => console.error("Supabase Sync Error:", e));
       }
     }
-    if (milkmen) {
-      setMilkmen(milkmen);
-      localStorage.setItem('df_milkmen', JSON.stringify(milkmen));
+    if (updatedMilk) {
+      setMilkmen(updatedMilk);
+      localStorage.setItem('df_milkmen', JSON.stringify(updatedMilk));
       if (isSupabaseConfigured()) {
-        saveMilkmen(milkmen).catch(e => console.error("Supabase Sync Error:", e));
+        saveMilkmen(updatedMilk).catch(e => console.error("Supabase Sync Error:", e));
       }
     }
-    if (milkmanPayments) {
-      setMilkmanPayments(milkmanPayments);
-      localStorage.setItem('df_milkman_payments', JSON.stringify(milkmanPayments));
+    if (updatedMilkmanPayments) {
+      setMilkmanPayments(updatedMilkmanPayments);
+      localStorage.setItem('df_milkman_payments', JSON.stringify(updatedMilkmanPayments));
       if (isSupabaseConfigured()) {
-        saveMilkmanPayments(milkmanPayments).catch(e => console.error("Supabase Sync Error:", e));
+        saveMilkmanPayments(updatedMilkmanPayments).catch(e => console.error("Supabase Sync Error:", e));
       }
     }
   };
@@ -702,9 +678,15 @@ export default function Dashboard() {
       type: 'neutral'
     };
 
-    saveState({
-      production: [newLog, ...productionLogs], activities: [newActivity, ...activities]
-    });
+    saveState(
+      [newLog, ...productionLogs],
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      [newActivity, ...activities],
+      undefined
+    );
 
     setProdLiters('');
     setProdSpecies('All');
@@ -768,9 +750,15 @@ export default function Dashboard() {
       type: 'neutral'
     };
 
-    saveState({
-      dispatches: [newDispatch, ...dispatches], activities: [newActivity, ...activities], milkmen: updatedMilkmen
-    });
+    saveState(
+      undefined,
+      [newDispatch, ...dispatches],
+      undefined,
+      undefined,
+      undefined,
+      [newActivity, ...activities],
+      updatedMilkmen
+    );
 
     setDispLiters('');
     setDispNotes('');
@@ -794,20 +782,7 @@ export default function Dashboard() {
     const rate = Number(saleRate);
     const rent = Number(saleDriverRent) || 0;
     const totalAmount = liters * rate + rent;
-    
-    // For cash sales, use the entered cash received amount (required)
-    // For credit sales, use the optional amount paid
-    let paidAmount: number;
-    if (saleType === 'Cash') {
-      if (!saleAmountPaid || isNaN(Number(saleAmountPaid)) || Number(saleAmountPaid) <= 0) {
-        showToastMessage('Please enter the cash received amount for this sale.', 'error');
-        return;
-      }
-      paidAmount = Number(saleAmountPaid);
-    } else {
-      paidAmount = Number(saleAmountPaid) || 0;
-    }
-    
+    const paidAmount = saleType === 'Cash' ? totalAmount : (Number(saleAmountPaid) || 0);
     const creditOwed = totalAmount - paidAmount;
     const billNo = saleBillNumber.trim() || `B-${1000 + sales.length + 1}`;
     const prodName = saleProduct;
@@ -868,9 +843,15 @@ export default function Dashboard() {
       type: 'positive'
     };
 
-    saveState({
-      customers: updatedCust, sales: [newSale, ...sales], activities: [newActivity, ...activities]
-    });
+    saveState(
+      undefined,
+      undefined,
+      updatedCust,
+      [newSale, ...sales],
+      undefined,
+      [newActivity, ...activities],
+      undefined
+    );
 
     setSaleCustName('');
     setSaleLiters('');
@@ -915,9 +896,15 @@ export default function Dashboard() {
       type: 'negative'
     };
 
-    saveState({
-      expenses: [newExpense, ...expenses], activities: [newActivity, ...activities]
-    });
+    saveState(
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      [newExpense, ...expenses],
+      [newActivity, ...activities],
+      undefined
+    );
 
     setExpAmount('');
     setExpDesc('');
@@ -975,9 +962,16 @@ export default function Dashboard() {
       type: 'positive'
     };
 
-    saveState({
-      customers: updatedCust, activities: [newActivity, ...activities], customerPayments: [newPayment, ...customerPayments]
-    });
+    saveState(
+      undefined,
+      undefined,
+      updatedCust,
+      undefined,
+      undefined,
+      [newActivity, ...activities],
+      undefined,
+      [newPayment, ...customerPayments]
+    );
 
     setSelectedEntityId('');
     setPaymentAmount('');
@@ -1031,9 +1025,15 @@ export default function Dashboard() {
       type: 'positive'
     };
 
-    saveState({
-      dispatches: updatedDispatches, activities: [newActivity, ...activities], milkmen: updatedMilkmen
-    });
+    saveState(
+      undefined,
+      updatedDispatches,
+      undefined,
+      undefined,
+      undefined,
+      [newActivity, ...activities],
+      updatedMilkmen
+    );
 
     setActiveModal(null);
     setReconcileMilkmanId('');
@@ -1090,9 +1090,17 @@ export default function Dashboard() {
       type: 'positive'
     };
 
-    saveState({
-      activities: [newActivity, ...activities], milkmen: updatedMilkmen, milkmanPayments: [newPayment, ...milkmanPayments]
-    });
+    saveState(
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      [newActivity, ...activities],
+      updatedMilkmen,
+      undefined,
+      [newPayment, ...milkmanPayments]
+    );
 
     setSelectedEntityId('');
     setPaymentAmount('');
@@ -1140,9 +1148,14 @@ export default function Dashboard() {
         type: 'neutral'
       };
 
-      saveState({
-      customers: updatedCust, activities: [newAct, ...activities]
-    });
+      saveState(
+        undefined,
+        undefined,
+        updatedCust,
+        undefined,
+        undefined,
+        [newAct, ...activities]
+      );
       showToastMessage('Customer account updated successfully.', 'success');
     } else {
       // Check if duplicate name
@@ -1173,9 +1186,14 @@ export default function Dashboard() {
         type: 'positive'
       };
 
-      saveState({
-      customers: updatedCust, activities: [newAct, ...activities]
-    });
+      saveState(
+        undefined,
+        undefined,
+        updatedCust,
+        undefined,
+        undefined,
+        [newAct, ...activities]
+      );
       showToastMessage('New customer account created successfully.', 'success');
     }
 
@@ -1234,65 +1252,17 @@ export default function Dashboard() {
         type: 'negative'
       };
 
-      saveState({
-      customers: updatedCust, sales: updatedSales, activities: [newActivity, ...activities]
-    });
+      saveState(
+        undefined,
+        undefined,
+        updatedCust,
+        updatedSales,
+        undefined,
+        [newActivity, ...activities],
+        undefined
+      );
       showToastMessage(`Successfully deleted Bill #${saleToDelete.billNumber}!`);
     }
-  };
-
-  // Edit Sale Function
-  const handleEditSale = (sale: Sale) => {
-    setEditingSaleId(sale.id);
-    setEditSaleData({ ...sale });
-  };
-
-  const handleSaveSaleEdit = (saleId: string) => {
-    if (!editSaleData) return;
-    
-    const updatedSales = sales.map(s => s.id === saleId ? editSaleData : s);
-    setSales(updatedSales);
-    
-    if (isSupabaseConfigured()) {
-      saveSales(updatedSales).catch(e => console.error("Supabase Sync Error:", e));
-    }
-    
-    localStorage.setItem('df_sales', JSON.stringify(updatedSales));
-    showToastMessage('Sale updated successfully!');
-    setEditingSaleId(null);
-    setEditSaleData(null);
-  };
-
-  const handleCancelSaleEdit = () => {
-    setEditingSaleId(null);
-    setEditSaleData(null);
-  };
-
-  // Edit Expense Function
-  const handleEditExpense = (expense: Expense) => {
-    setEditingExpenseId(expense.id);
-    setEditExpenseData({ ...expense });
-  };
-
-  const handleSaveExpenseEdit = (expenseId: string) => {
-    if (!editExpenseData) return;
-    
-    const updatedExpenses = expenses.map(e => e.id === expenseId ? editExpenseData : e);
-    setExpenses(updatedExpenses);
-    
-    if (isSupabaseConfigured()) {
-      saveExpenses(updatedExpenses).catch(e => console.error("Supabase Sync Error:", e));
-    }
-    
-    localStorage.setItem('df_expenses', JSON.stringify(updatedExpenses));
-    showToastMessage('Expense updated successfully!');
-    setEditingExpenseId(null);
-    setEditExpenseData(null);
-  };
-
-  const handleCancelExpenseEdit = () => {
-    setEditingExpenseId(null);
-    setEditExpenseData(null);
   };
 
   // Filter activities
@@ -3069,14 +3039,15 @@ export default function Dashboard() {
                   </div>
                 </div>
 
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                   {/* Date Picker */}
-                  <div className="relative">
-                    <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 block mb-1">Select Date</label>
+                  <div className="flex flex-col">
+                    <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">Filter Date</label>
                     <input
                       type="date"
-                      value={salesSelectedDate}
-                      onChange={(e) => setSalesSelectedDate(e.target.value)}
-                      className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-slate-800 font-medium"
+                      value={selectedSalesDate}
+                      onChange={(e) => setSelectedSalesDate(e.target.value)}
+                      className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-slate-800 font-medium"
                     />
                   </div>
 
@@ -3138,8 +3109,8 @@ export default function Dashboard() {
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-700 text-xs">
                       {(() => {
-                        const selectedSales = sales.filter(s => s.date === salesSelectedDate);
-                        const filteredTodaySales = selectedSales.filter(s => 
+                        const todaySales = sales.filter(s => s.date === selectedSalesDate);
+                        const filteredTodaySales = todaySales.filter(s => 
                           s.customerName.toLowerCase().includes(salesSearch.toLowerCase())
                         );
 
@@ -3191,42 +3162,14 @@ export default function Dashboard() {
                                 {remaining > 0 ? remaining.toLocaleString() : '—'}
                               </td>
                               <td className="py-4 px-4">
-                                <div className="flex items-center justify-center gap-2">
-                                  {editingSaleId === sale.id ? (
-                                    <>
-                                      <button
-                                        onClick={() => handleSaveSaleEdit(sale.id)}
-                                        className="p-1.5 hover:bg-emerald-50 text-emerald-600 hover:text-emerald-700 rounded-lg transition-colors cursor-pointer"
-                                        title="Save Changes"
-                                      >
-                                        <Check className="w-4 h-4" />
-                                      </button>
-                                      <button
-                                        onClick={handleCancelSaleEdit}
-                                        className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-lg transition-colors cursor-pointer"
-                                        title="Cancel"
-                                      >
-                                        <X className="w-4 h-4" />
-                                      </button>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <button
-                                        onClick={() => handleEditSale(sale)}
-                                        className="p-1.5 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-lg transition-colors cursor-pointer"
-                                        title="Edit Sale"
-                                      >
-                                        <Edit className="w-4 h-4" />
-                                      </button>
-                                      <button
-                                        onClick={() => handleDeleteSale(sale.id)}
-                                        className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
-                                        title="Delete Sale"
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                      </button>
-                                    </>
-                                  )}
+                                <div className="flex items-center justify-center">
+                                  <button
+                                    onClick={() => handleDeleteSale(sale.id)}
+                                    className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
+                                    title="Delete Sale"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
                                 </div>
                               </td>
                             </tr>
@@ -3240,7 +3183,7 @@ export default function Dashboard() {
 
               {/* Summary Metrics Row */}
               {(() => {
-                const todaySales = sales.filter(s => s.date === todayStr);
+                const todaySales = sales.filter(s => s.date === selectedSalesDate);
                 const filteredTodaySales = todaySales.filter(s => 
                   s.customerName.toLowerCase().includes(salesSearch.toLowerCase())
                 );
@@ -3271,6 +3214,110 @@ export default function Dashboard() {
                   </div>
                 );
               })()}
+
+              {/* TODAY'S EXPENSES SECTION */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm mt-8">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-rose-100 to-orange-100 rounded-xl flex items-center justify-center">
+                      <Receipt className="w-6 h-6 text-rose-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-display font-bold text-xl text-slate-900">{"Today's Expenses"}</h3>
+                      <p className="text-xs text-slate-500">Track and manage expenses recorded on {selectedExpenseDate}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6">
+                  {/* Date Picker */}
+                  <div className="flex flex-col">
+                    <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 mb-1">Filter Date</label>
+                    <input
+                      type="date"
+                      value={selectedExpenseDate}
+                      onChange={(e) => setSelectedExpenseDate(e.target.value)}
+                      className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none transition-all text-slate-800 font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto border border-slate-100 rounded-xl shadow-sm">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50/70 border-b border-slate-100 text-slate-400 text-[10px] font-extrabold uppercase tracking-widest">
+                        <th className="py-3.5 px-4 font-black">Date</th>
+                        <th className="py-3.5 px-4 font-black">Category</th>
+                        <th className="py-3.5 px-4 font-black">Description</th>
+                        <th className="py-3.5 px-4 font-black text-right">Amount (PKR)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-slate-700 text-xs">
+                      {(() => {
+                        const todayExpenses = expenses.filter(e => e.date === selectedExpenseDate);
+                        if (todayExpenses.length === 0) {
+                          return (
+                            <tr>
+                              <td colSpan={4} className="py-12 text-center bg-slate-50 text-slate-400 font-medium italic">
+                                No expenses recorded for {selectedExpenseDate}.
+                              </td>
+                            </tr>
+                          );
+                        }
+                        return todayExpenses.map(expense => (
+                          <tr key={expense.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="py-4 px-4 font-semibold text-slate-800">
+                              {expense.date}
+                            </td>
+                            <td className="py-4 px-4">
+                              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800">
+                                {expense.category}
+                              </span>
+                            </td>
+                            <td className="py-4 px-4 text-slate-600">
+                              {expense.description || '—'}
+                            </td>
+                            <td className="py-4 px-4 text-right font-bold text-rose-600">
+                              PKR {expense.amount.toLocaleString()}
+                            </td>
+                          </tr>
+                        ));
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Expenses Summary */}
+                <div className="mt-6 pt-6 border-t border-slate-200">
+                  {(() => {
+                    const todayExpenses = expenses.filter(e => e.date === selectedExpenseDate);
+                    const totalExpenses = todayExpenses.reduce((sum, e) => sum + e.amount, 0);
+                    const avgExpense = todayExpenses.length > 0 ? Math.round(totalExpenses / todayExpenses.length) : 0;
+                    return (
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <p className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Total Expenses</p>
+                          <p className="font-display font-bold text-2xl text-slate-900">
+                            PKR {totalExpenses.toLocaleString()}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Count</p>
+                          <p className="font-display font-bold text-2xl text-slate-900">
+                            {todayExpenses.length}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wider font-bold text-slate-500 mb-1">Average</p>
+                          <p className="font-display font-bold text-2xl text-slate-900">
+                            PKR {avgExpense.toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
 
             </div>
           </div>
@@ -3511,30 +3558,6 @@ export default function Dashboard() {
                             onChange={(e) => setSaleAmountPaid(e.target.value)}
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-sm font-semibold text-slate-800"
                           />
-                        </div>
-                      )}
-                      {saleType === 'Cash' && (
-                        <div>
-                          <label className="block text-xs font-bold text-emerald-600 uppercase mb-1">💰 Cash Received (PKR) *</label>
-                          <input
-                            type="number"
-                            placeholder="Enter amount of cash received"
-                            value={saleAmountPaid}
-                            onChange={(e) => setSaleAmountPaid(e.target.value)}
-                            className="w-full px-4 py-3 bg-emerald-50 border-2 border-emerald-300 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all text-sm font-semibold text-slate-800"
-                          />
-                          {saleAmountPaid && saleLiters && saleRate && (
-                            <div className="mt-2 text-xs text-slate-600">
-                              Total Due: PKR {(Number(saleLiters) * Number(saleRate)).toLocaleString()} | 
-                              Received: PKR {Number(saleAmountPaid).toLocaleString()} | 
-                              <span className={Number(saleAmountPaid) >= Number(saleLiters) * Number(saleRate) ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold'}>
-                                {Number(saleAmountPaid) >= Number(saleLiters) * Number(saleRate) 
-                                  ? ` Change: PKR ${(Number(saleAmountPaid) - Number(saleLiters) * Number(saleRate)).toLocaleString()}`
-                                  : ` Short: PKR ${(Number(saleLiters) * Number(saleRate) - Number(saleAmountPaid)).toLocaleString()}`
-                                }
-                              </span>
-                            </div>
-                          )}
                         </div>
                       )}
                     </div>
