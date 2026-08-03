@@ -4,3 +4,443 @@
   --font-sans: var(--font-sans), system-ui, sans-serif;
   --font-display: var(--font-display), system-ui, sans-serif;
 }
+
+/* ====================================================
+   PRINT STYLES - Statement/Ledger PDF Export
+   ==================================================== */
+
+@media print {
+  /* Global Print Settings */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: white !important;
+  }
+
+  /* ========================================
+     HIDE ALL NON-ESSENTIAL UI ELEMENTS
+     ======================================== */
+
+  /* 1. Hide Header Navigation */
+  header,
+  nav,
+  .navbar,
+  [role="navigation"],
+  .nav-header,
+  .header-nav,
+  .top-nav,
+  .main-header {
+    display: none !important;
+  }
+
+  /* 2. Hide Navigation Tabs and Buttons */
+  [class*="tab"],
+  .tabs,
+  .tab-nav,
+  .nav-tabs {
+    display: none !important;
+  }
+
+  /* 3. Hide Quick Action Buttons and Back Button */
+  .quick-actions,
+  .action-buttons,
+  .back-button,
+  [class*="quick"],
+  button[class*="back"],
+  button:has(svg[class*="ArrowLeft"]) {
+    display: none !important;
+  }
+
+  /* 4. Hide Action Bars, Control Panels & Statement Actions */
+  .action-bar,
+  .control-panel,
+  .controls,
+  .toolbar,
+  [class*="action-bar"],
+  .ledger-actions,
+  .statement-actions,
+  .customer-actions,
+  .print:hidden {
+    display: none !important;
+  }
+
+  /* 5. Hide Modal & Overlay Elements */
+  [role="dialog"],
+  .modal,
+  .modal-overlay,
+  .backdrop,
+  [class*="modal"],
+  [class*="overlay"] {
+    display: none !important;
+  }
+
+  /* 6. Hide Scrollbars */
+  ::-webkit-scrollbar,
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-thumb {
+    display: none !important;
+  }
+
+  /* 7. Hide Footer & Sidebars */
+  footer,
+  .footer,
+  .sidebar,
+  [class*="sidebar"],
+  .floating-buttons,
+  .floating-action,
+  .fab {
+    display: none !important;
+  }
+
+  /* 8. Hide Search, Filter, and Utility Controls */
+  .search-bar,
+  .filter-controls,
+  .sort-controls,
+  .pagination,
+  [class*="search"],
+  [class*="filter"],
+  [class*="sort"],
+  [class*="pagination"] {
+    display: none !important;
+  }
+
+  /* ========================================
+     SHOW ONLY STATEMENT CONTENT
+     ======================================== */
+
+  main {
+    display: block !important;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: white !important;
+  }
+
+  [class*="ledger"],
+  [class*="statement"],
+  [class*="customer"],
+  [class*="account"] {
+    display: block !important;
+  }
+
+  /* ========================================
+     PRINT HEADER FORMATTING
+     ======================================== */
+
+  .print-header {
+    display: block !important;
+    width: 100%;
+    padding: 20px 0 30px 0;
+    margin: 0 0 30px 0;
+    border-bottom: 3px solid #1e293b;
+    page-break-after: avoid;
+  }
+
+  .print-header-title {
+    font-size: 28px !important;
+    font-weight: 900 !important;
+    color: #0f172a !important;
+    margin: 0 0 8px 0;
+    font-family: "Outfit", system-ui, sans-serif !important;
+  }
+
+  .print-header-subtitle {
+    font-size: 14px !important;
+    color: #64748b !important;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600 !important;
+  }
+
+  .print-date,
+  .print-period {
+    font-size: 12px !important;
+    color: #475569 !important;
+    margin-top: 8px;
+    font-weight: 500 !important;
+  }
+
+  .customer-info-header {
+    display: block !important;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .customer-info-line {
+    display: block !important;
+    font-size: 12px !important;
+    color: #475569 !important;
+    margin: 4px 0;
+    font-weight: 500 !important;
+  }
+
+  .customer-info-label {
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    min-width: 120px;
+    display: inline-block;
+  }
+
+  /* ========================================
+     KPI / METRIC CARDS FOR PRINT
+     ======================================== */
+
+  .kpi-summary {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 15px !important;
+    margin-bottom: 30px !important;
+    page-break-inside: avoid !important;
+  }
+
+  .metric-card,
+  [class*="kpi"],
+  [class*="summary"],
+  [class*="metric"] {
+    display: block !important;
+    page-break-inside: avoid !important;
+    padding: 15px !important;
+    border: 1px solid #cbd5e1 !important;
+    background-color: #f8fafc !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .kpi-label,
+  .metric-label {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    color: #64748b !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  .kpi-value,
+  .metric-value {
+    font-size: 20px !important;
+    font-weight: 900 !important;
+    color: #0f172a !important;
+    font-family: "Outfit", system-ui, sans-serif !important;
+  }
+
+  /* ========================================
+     LEDGER TABLE FORMATTING
+     ======================================== */
+
+  .ledger-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin-top: 20px !important;
+    page-break-inside: auto !important;
+    font-size: 11px !important;
+  }
+
+  .ledger-table thead {
+    background-color: #1e293b !important;
+    color: white !important;
+    font-weight: 700 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    display: table-header-group;
+    page-break-after: avoid;
+  }
+
+  .ledger-table thead th {
+    background-color: #1e293b !important;
+    color: white !important;
+    padding: 8px 4px !important;
+    text-align: left;
+    border: 1px solid #0f172a !important;
+    font-size: 10px !important;
+  }
+
+  .ledger-table tbody {
+    display: table-row-group;
+  }
+
+  .ledger-table tbody tr {
+    page-break-inside: avoid !important;
+  }
+
+  .ledger-table tbody td {
+    border: 1px solid #cbd5e1 !important;
+    padding: 6px 4px !important;
+    color: #334155 !important;
+    font-size: 10px !important;
+  }
+
+  .ledger-table tbody tr:nth-child(even) {
+    background-color: #f1f5f9 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .ledger-table tbody tr:nth-child(odd) {
+    background-color: white !important;
+  }
+
+  /* Color cells for positive/negative amounts */
+  [class*="credit"],
+  [class*="positive"],
+  [class*="green"] {
+    color: #16a34a !important;
+    font-weight: 600 !important;
+  }
+
+  [class*="debit"],
+  [class*="negative"],
+  [class*="red"] {
+    color: #dc2626 !important;
+    font-weight: 600 !important;
+  }
+
+  /* ========================================
+     PAGE LAYOUT & SIZING
+     ======================================== */
+
+  @page {
+    size: A4 portrait;
+    margin: 0.5in 0.5in 0.5in 0.5in;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body {
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+    color: #334155 !important;
+  }
+
+  /* Remove excess spacing */
+  *:before,
+  *:after {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  /* Prevent widows and orphans */
+  p {
+    orphans: 2;
+    widows: 2;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* ========================================
+     TEXT & TYPOGRAPHY
+     ======================================== */
+
+  a {
+    text-decoration: none;
+    color: inherit !important;
+  }
+
+  [style*="background-image"],
+  [class*="bg-gradient"] {
+    background-image: none !important;
+  }
+
+  /* ========================================
+     HIDE PRINT-SPECIFIC CLASSES
+     ======================================== */
+
+  button[class*="print"],
+  button[title*="print"],
+  button[title*="Print"],
+  .print-button,
+  button[class*="export"],
+  button[class*="download"],
+  button[class*="csv"],
+  .print-no-break {
+    display: none !important;
+  }
+
+  /* Tailwind print: utilities */
+  .print\:hidden {
+    display: none !important;
+  }
+
+  .print\:block {
+    display: block !important;
+  }
+
+  .print\:visible {
+    visibility: visible !important;
+  }
+
+  .print\:bg-none {
+    background: none !important;
+  }
+
+  /* ========================================
+     ENSURE NO HORIZONTAL SCROLLING
+     ======================================== */
+
+  html, body {
+    overflow: visible !important;
+    max-width: 100% !important;
+  }
+
+  main {
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .overflow-x-auto {
+    overflow: visible !important;
+  }
+
+  table {
+    table-layout: fixed !important;
+    width: 100% !important;
+  }
+
+  td, th {
+    word-wrap: break-word !important;
+    overflow: visible !important;
+    max-width: none !important;
+  }
+
+  /* ========================================
+     STATEMENT-SPECIFIC HIDING
+     ======================================== */
+
+  /* Show statement content only */
+  [class*="statement"],
+  [class*="ledger"] {
+    display: block !important;
+  }
+
+  /* Hide any overlay or modal content */
+  [class*="modal"],
+  [class*="overlay"],
+  [class*="dialog"] {
+    display: none !important;
+  }
+}
+
+/* ====================================================
+   SCREEN MEDIA - Normal View (No Changes)
+   ==================================================== */
+
+@media screen {
+  /* Ensure normal behavior on screen */
+  * {
+    -webkit-print-color-adjust: auto;
+    print-color-adjust: auto;
+  }
+}
