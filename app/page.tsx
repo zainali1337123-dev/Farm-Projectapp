@@ -1,5 +1,4 @@
 'use client';
-// CODE RABBIT TESTING 
 
 import React, { useState, useEffect } from 'react';
 import { 
@@ -280,7 +279,7 @@ export default function Dashboard() {
   const [activityFilter, setActivityFilter] = useState<'all' | 'production' | 'dispatch' | 'sale' | 'expense'>('all');
   
   // Active section tab for layout
-  const [dashboardTab, setDashboardTab] = useState<'overview' | 'milkmen' | 'customers' | 'production' | 'sales'>('overview');
+  const [dashboardTab, setDashboardTab] = useState<'overview' | 'milkmen' | 'customers' | 'production' | 'sales' | 'reconciliation'>('overview');
 
   // Species filter for Average Milk per Animal KPI card
   const [avgAnimalFilter, setAvgAnimalFilter] = useState<'All' | 'Cow' | 'Buffalo'>('All');
@@ -289,6 +288,7 @@ export default function Dashboard() {
   const [salesSearch, setSalesSearch] = useState('');
   const [selectedSalesDate, setSelectedSalesDate] = useState('2026-07-16');
   const [selectedExpenseDate, setSelectedExpenseDate] = useState('2026-07-16');
+  const [reconciliationDate, setReconciliationDate] = useState('2026-07-16');
 
   // Success Toast message
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -522,10 +522,18 @@ export default function Dashboard() {
   };
 
   // ----------------------------------------------------
+  // ----------------------------------------------------
   // METRICS COMPUTATIONS (Calculated Dynamically from State)
   // ----------------------------------------------------
-  const todayStr = '2026-07-16';
-  const yesterdayStr = '2026-07-15';
+  
+  // Get actual current date (YYYY-MM-DD format)
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  
+  // Get yesterday's date
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
 
   // 1. Total Milk Production (Today)
   const todayProduction = productionLogs
@@ -1266,6 +1274,52 @@ export default function Dashboard() {
     }
   };
 
+  // =====================================================
+  // DAY RECONCILIATION CALCULATIONS
+  // =====================================================
+  const calculateDayReconciliation = (selectedDate: string) => {
+    // Filter sales for the selected date
+    const daySales = sales.filter(s => s.date === selectedDate);
+    
+    // Milk & Sales Summary
+    const totalMilkSold = daySales.reduce((sum, s) => sum + s.volumeLiters, 0);
+    const totalBilledAmount = daySales.reduce((sum, s) => sum + s.totalAmount, 0);
+    
+    const creditSales = daySales.filter(s => s.type === 'Credit');
+    const cashSales = daySales.filter(s => s.type === 'Cash');
+    
+    const creditBilledAmount = creditSales.reduce((sum, s) => sum + s.totalAmount, 0);
+    const cashBilledAmount = cashSales.reduce((sum, s) => sum + s.totalAmount, 0);
+    
+    // Expenses Summary
+    const dayExpenses = expenses.filter(e => e.date === selectedDate);
+    const totalExpenses = dayExpenses.reduce((sum, e) => sum + e.amount, 0);
+    
+    // Cash Position
+    const totalCashIn = daySales.reduce((sum, s) => sum + s.paidAmount, 0);
+    const totalCashOut = totalExpenses;
+    const expectedCashInHand = totalCashIn - totalCashOut;
+    
+    // Credit Outstanding (to be collected)
+    const creditOutstanding = creditSales.reduce((sum, s) => sum + (s.totalAmount - s.paidAmount), 0);
+    
+    return {
+      totalMilkSold,
+      totalBilledAmount,
+      creditBilledAmount,
+      cashBilledAmount,
+      totalExpenses,
+      totalCashIn,
+      totalCashOut,
+      expectedCashInHand,
+      creditOutstanding,
+      daySales: daySales.length,
+      dayExpenses: dayExpenses.length
+    };
+  };
+
+  const reconciliation = calculateDayReconciliation(reconciliationDate);
+
   // Filter activities
   const filteredActivities = activities.filter(act => {
     const matchesSearch = act.title.toLowerCase().includes(activitySearch.toLowerCase()) || 
@@ -1531,6 +1585,16 @@ export default function Dashboard() {
                 }`}
               >
                 {"Today's Sales"} ({sales.filter(s => s.date === todayStr).length})
+              </button>
+              <button
+                onClick={() => setDashboardTab('reconciliation')}
+                className={`px-4 py-2.5 rounded-xl font-display font-medium text-sm transition-all whitespace-nowrap cursor-pointer ${
+                  dashboardTab === 'reconciliation' 
+                    ? 'bg-blue-600 text-white shadow-md' 
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800/40'
+                }`}
+              >
+                📊 Day Reconciliation
               </button>
             </div>
 
@@ -2732,7 +2796,7 @@ export default function Dashboard() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 self-start md:self-center">
+                    <div className="flex items-center gap-2 self-start md:self-center print:hidden">
                       <button 
                         onClick={() => window.print()}
                         className="px-3.5 py-2 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border border-slate-200"
@@ -2784,33 +2848,63 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  {/* Summary Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-                      <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Current Outstanding</p>
-                      <h4 className="text-2xl font-black text-slate-900 mt-2">PKR {activeCustomer.ledgerBalance.toLocaleString()}</h4>
+                  {/* PRINT HEADER - Only shows when printing */}
+                  <div className="print-header hidden print:block print:visible">
+                    <div className="print-header-title">Danish Farm — Customer Statement</div>
+                    <div className="print-header-subtitle">Comprehensive Ledger & Transaction Report</div>
+                    <div className="print-date">
+                      <strong>Date Generated:</strong> {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    </div>
+                    <div className="print-period">
+                      <strong>Statement Type:</strong> Complete Account History
+                    </div>
+                    
+                    <div className="customer-info-header">
+                      <div className="customer-info-line">
+                        <span className="customer-info-label">Customer Name:</span> {activeCustomer.name}
+                      </div>
+                      <div className="customer-info-line">
+                        <span className="customer-info-label">Phone Number:</span> {activeCustomer.phone || 'N/A'}
+                      </div>
+                      <div className="customer-info-line">
+                        <span className="customer-info-label">Account Type:</span> {activeCustomer.type} Account
+                      </div>
+                      <div className="customer-info-line">
+                        <span className="customer-info-label">Opening Balance:</span> PKR {(activeCustomer.openingBalance || 0).toLocaleString()}
+                      </div>
+                      <div className="customer-info-line">
+                        <span className="customer-info-label">Statement Date:</span> {new Date().toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Summary Cards - With Print Classes */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 kpi-summary print:grid print:grid-cols-4 print:gap-4">
+                    <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm metric-card print:shadow-none print:page-break-inside-avoid">
+                      <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider kpi-label">Current Outstanding</p>
+                      <h4 className="text-2xl font-black text-slate-900 mt-2 kpi-value">PKR {activeCustomer.ledgerBalance.toLocaleString()}</h4>
                       <p className="text-[10px] text-amber-600 mt-1">Pending collection</p>
                     </div>
-                    <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-                      <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Supplied</p>
-                      <h4 className="text-2xl font-black text-slate-900 mt-2">{totalQty.toLocaleString()} Liters</h4>
+                    <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm metric-card print:shadow-none print:page-break-inside-avoid">
+                      <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider kpi-label">Total Supplied</p>
+                      <h4 className="text-2xl font-black text-slate-900 mt-2 kpi-value">{totalQty.toLocaleString()} Liters</h4>
                       <p className="text-[10px] text-slate-400 mt-1">Net delivery volume</p>
                     </div>
-                    <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-                      <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Billing</p>
-                      <h4 className="text-2xl font-black text-slate-900 mt-2">PKR {totalBilled.toLocaleString()}</h4>
+                    <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm metric-card print:shadow-none print:page-break-inside-avoid">
+                      <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider kpi-label">Total Billing</p>
+                      <h4 className="text-2xl font-black text-slate-900 mt-2 kpi-value">PKR {totalBilled.toLocaleString()}</h4>
                       <p className="text-[10px] text-slate-400 mt-1">Includes driver rents</p>
                     </div>
-                    <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
-                      <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Paid</p>
-                      <h4 className="text-2xl font-black text-emerald-700 mt-2">PKR {totalPaid.toLocaleString()}</h4>
+                    <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm metric-card print:shadow-none print:page-break-inside-avoid">
+                      <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider kpi-label">Total Paid</p>
+                      <h4 className="text-2xl font-black text-emerald-700 mt-2 kpi-value">PKR {totalPaid.toLocaleString()}</h4>
                       <p className="text-[10px] text-emerald-600 mt-1">Direct + settlement payments</p>
                     </div>
                   </div>
 
-                  {/* Comprehensive Ledger Table Card */}
-                  <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                    <div className="flex items-center justify-between mb-5">
+                  {/* Comprehensive Ledger Table Card - With Print Classes */}
+                  <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 ledger-card print:rounded-none print:border-none print:shadow-none print:p-0">
+                    <div className="flex items-center justify-between mb-5 print:hidden">
                       <div>
                         <h4 className="font-display font-bold text-base text-slate-900">Ledger History Log</h4>
                         <p className="text-xs text-slate-500">Continuous statement ledger of deliveries and receipts</p>
@@ -2820,68 +2914,69 @@ export default function Dashboard() {
                       </div>
                     </div>
 
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse">
+                    {/* Ledger Table - Print Optimized */}
+                    <div className="overflow-x-auto print:overflow-visible">
+                      <table className="w-full text-left border-collapse ledger-table print:w-full print:text-xs">
                         <thead>
-                          <tr className="border-b border-slate-200 text-slate-400 text-[11px] font-bold uppercase tracking-wider">
-                            <th className="py-3 px-3">Bill / Rec #</th>
-                            <th className="py-3 px-3">Date & Time</th>
-                            <th className="py-3 px-3">Product / Detail</th>
-                            <th className="py-3 px-3 text-right">Qty (L)</th>
-                            <th className="py-3 px-3 text-right">Rate</th>
-                            <th className="py-3 px-3 text-right">Driver Rent</th>
-                            <th className="py-3 px-3">Driver / Courier</th>
-                            <th className="py-3 px-3 text-right">Bill Amt</th>
-                            <th className="py-3 px-3 text-right">Paid Amt</th>
-                            <th className="py-3 px-3 text-right bg-slate-50 font-bold text-slate-800">Remaining Balance</th>
+                          <tr className="border-b border-slate-200 text-slate-400 text-[11px] font-bold uppercase tracking-wider print:bg-slate-900 print:text-white">
+                            <th className="py-3 px-3 print:py-2 print:px-2">Bill / Rec #</th>
+                            <th className="py-3 px-3 print:py-2 print:px-2">Date & Time</th>
+                            <th className="py-3 px-3 print:py-2 print:px-2">Product / Detail</th>
+                            <th className="py-3 px-3 text-right print:py-2 print:px-2">Qty (L)</th>
+                            <th className="py-3 px-3 text-right print:py-2 print:px-2 print:hidden">Rate</th>
+                            <th className="py-3 px-3 text-right print:py-2 print:px-2 print:hidden">Driver Rent</th>
+                            <th className="py-3 px-3 print:py-2 print:px-2 print:hidden">Driver / Courier</th>
+                            <th className="py-3 px-3 text-right print:py-2 print:px-2">Bill Amt</th>
+                            <th className="py-3 px-3 text-right print:py-2 print:px-2">Paid Amt</th>
+                            <th className="py-3 px-3 text-right bg-slate-50 font-bold text-slate-800 print:py-2 print:px-2 print:bg-slate-900 print:text-white">Balance</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 text-slate-700 text-xs">
+                        <tbody className="divide-y divide-slate-100 text-slate-700 text-xs print:divide-slate-200">
                           {/* Starting Balance row */}
-                          <tr className="bg-slate-50/40">
-                            <td className="py-3.5 px-3 font-semibold text-slate-400">-</td>
-                            <td className="py-3.5 px-3 text-slate-400">-</td>
-                            <td className="py-3.5 px-3 font-medium text-slate-500 italic">Pre-existing Opening Balance</td>
-                            <td className="py-3.5 px-3 text-right text-slate-400">-</td>
-                            <td className="py-3.5 px-3 text-right text-slate-400">-</td>
-                            <td className="py-3.5 px-3 text-right text-slate-400">-</td>
-                            <td className="py-3.5 px-3 text-slate-400 italic">Manual Entry</td>
-                            <td className="py-3.5 px-3 text-right text-slate-400">-</td>
-                            <td className="py-3.5 px-3 text-right text-slate-400">-</td>
-                            <td className="py-3.5 px-3 text-right bg-slate-50 font-bold text-slate-900">
+                          <tr className="bg-slate-50/40 print:bg-slate-100">
+                            <td className="py-3.5 px-3 font-semibold text-slate-400 print:py-2 print:px-2">-</td>
+                            <td className="py-3.5 px-3 text-slate-400 print:py-2 print:px-2">-</td>
+                            <td className="py-3.5 px-3 font-medium text-slate-500 italic print:py-2 print:px-2">Opening Balance</td>
+                            <td className="py-3.5 px-3 text-right text-slate-400 print:py-2 print:px-2">-</td>
+                            <td className="py-3.5 px-3 text-right text-slate-400 print:py-2 print:px-2 print:hidden">-</td>
+                            <td className="py-3.5 px-3 text-right text-slate-400 print:py-2 print:px-2 print:hidden">-</td>
+                            <td className="py-3.5 px-3 text-slate-400 italic print:py-2 print:px-2 print:hidden">-</td>
+                            <td className="py-3.5 px-3 text-right text-slate-400 print:py-2 print:px-2">-</td>
+                            <td className="py-3.5 px-3 text-right text-slate-400 print:py-2 print:px-2">-</td>
+                            <td className="py-3.5 px-3 text-right bg-slate-50 font-bold text-slate-900 print:py-2 print:px-2 print:bg-slate-200 print:font-bold">
                               PKR {startingBalance.toLocaleString()}
                             </td>
                           </tr>
 
                           {ledgerRows.map(row => (
-                            <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
-                              <td className="py-3.5 px-3 font-bold text-slate-900">
+                            <tr key={row.id} className="hover:bg-slate-50/50 transition-colors print:hover:bg-slate-50">
+                              <td className="py-3.5 px-3 font-bold text-slate-900 print:py-2 print:px-2">
                                 {row.billNumber}
                               </td>
-                              <td className="py-3.5 px-3 text-slate-500 whitespace-nowrap">
-                                {row.date} <span className="text-[10px] text-slate-400">({row.time})</span>
+                              <td className="py-3.5 px-3 text-slate-500 whitespace-nowrap print:py-2 print:px-2">
+                                {row.date} <span className="text-[10px] text-slate-400 print:text-slate-600">({row.time})</span>
                               </td>
-                              <td className="py-3.5 px-3 font-medium">
+                              <td className="py-3.5 px-3 font-medium print:py-2 print:px-2">
                                 <span className={row.type === 'payment' ? 'text-emerald-700 font-semibold' : 'text-slate-800'}>
                                   {row.productName}
                                 </span>
                               </td>
-                              <td className="py-3.5 px-3 text-right font-medium">
+                              <td className="py-3.5 px-3 text-right font-medium print:py-2 print:px-2">
                                 {row.qty !== undefined ? `${row.qty} L` : '-'}
                               </td>
-                              <td className="py-3.5 px-3 text-right text-slate-500">
+                              <td className="py-3.5 px-3 text-right text-slate-500 print:py-2 print:px-2 print:hidden">
                                 {row.rate !== undefined ? `PKR ${row.rate}` : '-'}
                               </td>
-                              <td className="py-3.5 px-3 text-right text-slate-500">
+                              <td className="py-3.5 px-3 text-right text-slate-500 print:py-2 print:px-2 print:hidden">
                                 {row.driverRent ? `PKR ${row.driverRent}` : '-'}
                               </td>
-                              <td className="py-3.5 px-3 text-slate-600">
+                              <td className="py-3.5 px-3 text-slate-600 print:py-2 print:px-2 print:hidden">
                                 {row.driverName || '-'}
                               </td>
-                              <td className="py-3.5 px-3 text-right font-bold text-slate-800">
+                              <td className="py-3.5 px-3 text-right font-bold text-slate-800 print:py-2 print:px-2">
                                 {row.billAmount > 0 ? `PKR ${row.billAmount.toLocaleString()}` : '-'}
                               </td>
-                              <td className="py-3.5 px-3 text-right font-bold text-emerald-700">
+                              <td className="py-3.5 px-3 text-right font-bold text-emerald-700 print:py-2 print:px-2 print:text-emerald-800">
                                 {row.cashPaid > 0 ? `PKR ${row.cashPaid.toLocaleString()}` : '0'}
                               </td>
                               <td className="py-3.5 px-3 text-right bg-slate-50 font-black text-slate-900">
@@ -3320,6 +3415,186 @@ export default function Dashboard() {
                 </div>
               </div>
 
+            </div>
+          </div>
+        )}
+
+        {/* DAY RECONCILIATION TAB */}
+        {dashboardTab === 'reconciliation' && (
+          <div className="space-y-6">
+            {/* Reconciliation Header & Date Picker */}
+            <div className="bg-slate-50/50 rounded-2xl border border-slate-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="font-display font-bold text-2xl text-slate-900">📊 Day Reconciliation Report</h3>
+                  <p className="text-sm text-slate-600 mt-1">Complete daily cash and milk summary</p>
+                </div>
+              </div>
+
+              {/* Date Picker */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-4">
+                <div className="flex-1 min-w-48">
+                  <label className="text-xs uppercase tracking-widest font-bold text-slate-600 block mb-2">Select Date for Reconciliation</label>
+                  <input
+                    type="date"
+                    value={reconciliationDate}
+                    onChange={(e) => setReconciliationDate(e.target.value)}
+                    className="w-full px-4 py-3 bg-white border-2 border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all text-slate-800 font-semibold"
+                  />
+                </div>
+                <div className="text-sm text-slate-600 font-medium">
+                  Showing data for: <span className="font-bold text-slate-900">{reconciliationDate}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Milk & Sales Summary Section */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+              <h4 className="font-display font-bold text-xl text-slate-900 mb-6 flex items-center gap-2">
+                <Milk className="w-5 h-5 text-emerald-600" />
+                Milk & Sales Summary
+              </h4>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Total Milk Sold */}
+                <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200 rounded-2xl p-6">
+                  <p className="text-xs uppercase tracking-widest font-bold text-emerald-700 mb-2">Total Milk Sold</p>
+                  <p className="font-display font-black text-3xl text-emerald-900">{reconciliation.totalMilkSold}</p>
+                  <p className="text-xs text-emerald-600 mt-2">Liters</p>
+                </div>
+
+                {/* Total Billed Amount */}
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200 rounded-2xl p-6">
+                  <p className="text-xs uppercase tracking-widest font-bold text-blue-700 mb-2">Total Billed</p>
+                  <p className="font-display font-black text-3xl text-blue-900">PKR {reconciliation.totalBilledAmount.toLocaleString()}</p>
+                  <p className="text-xs text-blue-600 mt-2">{reconciliation.daySales} Transactions</p>
+                </div>
+
+                {/* Credit Sales */}
+                <div className="bg-gradient-to-br from-orange-50 to-orange-100/50 border border-orange-200 rounded-2xl p-6">
+                  <p className="text-xs uppercase tracking-widest font-bold text-orange-700 mb-2">From Credit</p>
+                  <p className="font-display font-black text-3xl text-orange-900">PKR {reconciliation.creditBilledAmount.toLocaleString()}</p>
+                  <p className="text-xs text-orange-600 mt-2">Customers</p>
+                </div>
+
+                {/* Cash Sales */}
+                <div className="bg-gradient-to-br from-green-50 to-green-100/50 border border-green-200 rounded-2xl p-6">
+                  <p className="text-xs uppercase tracking-widest font-bold text-green-700 mb-2">From Cash</p>
+                  <p className="font-display font-black text-3xl text-green-900">PKR {reconciliation.cashBilledAmount.toLocaleString()}</p>
+                  <p className="text-xs text-green-600 mt-2">Immediate</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Expenses Summary Section */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+              <h4 className="font-display font-bold text-xl text-slate-900 mb-6 flex items-center gap-2">
+                <Receipt className="w-5 h-5 text-rose-600" />
+                Expenses Summary
+              </h4>
+
+              <div className="bg-gradient-to-br from-rose-50 to-rose-100/50 border border-rose-200 rounded-2xl p-6">
+                <p className="text-xs uppercase tracking-widest font-bold text-rose-700 mb-2">Total Expenses</p>
+                <p className="font-display font-black text-4xl text-rose-900">PKR {reconciliation.totalExpenses.toLocaleString()}</p>
+                <p className="text-xs text-rose-600 mt-2">{reconciliation.dayExpenses} Expense Items</p>
+              </div>
+            </div>
+
+            {/* Net Cash Position Section */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+              <h4 className="font-display font-bold text-xl text-slate-900 mb-6 flex items-center gap-2">
+                <Coins className="w-5 h-5 text-yellow-600" />
+                Net Cash Position
+              </h4>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Total Cash In */}
+                <div className="bg-gradient-to-br from-teal-50 to-teal-100/50 border border-teal-200 rounded-2xl p-6">
+                  <p className="text-xs uppercase tracking-widest font-bold text-teal-700 mb-2">Total Cash In</p>
+                  <p className="font-display font-black text-3xl text-teal-900">PKR {reconciliation.totalCashIn.toLocaleString()}</p>
+                  <p className="text-xs text-teal-600 mt-2">Cash Received</p>
+                </div>
+
+                {/* Total Cash Out */}
+                <div className="bg-gradient-to-br from-red-50 to-red-100/50 border border-red-200 rounded-2xl p-6">
+                  <p className="text-xs uppercase tracking-widest font-bold text-red-700 mb-2">Total Cash Out</p>
+                  <p className="font-display font-black text-3xl text-red-900">PKR {reconciliation.totalCashOut.toLocaleString()}</p>
+                  <p className="text-xs text-red-600 mt-2">Expenses Paid</p>
+                </div>
+
+                {/* Expected Cash in Hand */}
+                <div className={`bg-gradient-to-br ${reconciliation.expectedCashInHand >= 0 ? 'from-emerald-50 to-emerald-100/50 border border-emerald-200' : 'from-red-50 to-red-100/50 border border-red-200'} rounded-2xl p-6`}>
+                  <p className="text-xs uppercase tracking-widest font-bold mb-2" style={{color: reconciliation.expectedCashInHand >= 0 ? '#047857' : '#991b1b'}}>Expected Cash in Hand</p>
+                  <p className={`font-display font-black text-3xl ${reconciliation.expectedCashInHand >= 0 ? 'text-emerald-900' : 'text-red-900'}`}>
+                    PKR {reconciliation.expectedCashInHand.toLocaleString()}
+                  </p>
+                  <p className={`text-xs mt-2 ${reconciliation.expectedCashInHand >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {reconciliation.expectedCashInHand >= 0 ? 'Positive Balance' : 'Negative Balance'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Credit Outstanding */}
+              <div className="mt-6 pt-6 border-t border-slate-200">
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs uppercase tracking-widest font-bold text-slate-600 mb-1">Credit Outstanding (To Collect)</p>
+                      <p className="font-display font-bold text-2xl text-slate-900">PKR {reconciliation.creditOutstanding.toLocaleString()}</p>
+                    </div>
+                    <AlertCircle className="w-8 h-8 text-amber-500" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Daily Summary Table */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+              <h4 className="font-display font-bold text-xl text-slate-900 mb-6">Summary Details</h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h5 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-blue-600" />
+                    Daily Income
+                  </h5>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                      <span className="text-slate-600">Cash Sales Amount</span>
+                      <span className="font-bold text-slate-900">PKR {reconciliation.cashBilledAmount.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                      <span className="text-slate-600">Credit Sales Amount</span>
+                      <span className="font-bold text-slate-900">PKR {reconciliation.creditBilledAmount.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                      <span className="text-slate-600">Cash Actually Received</span>
+                      <span className="font-bold text-emerald-600">PKR {reconciliation.totalCashIn.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h5 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <TrendingDown className="w-4 h-4 text-rose-600" />
+                    Daily Expenses
+                  </h5>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                      <span className="text-slate-600">Total Expenses</span>
+                      <span className="font-bold text-rose-600">PKR {reconciliation.totalExpenses.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                      <span className="text-slate-600">Milk Sold (Quantity)</span>
+                      <span className="font-bold text-slate-900">{reconciliation.totalMilkSold} L</span>
+                    </div>
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                      <span className="text-slate-600">Outstanding Credit</span>
+                      <span className="font-bold text-amber-600">PKR {reconciliation.creditOutstanding.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
