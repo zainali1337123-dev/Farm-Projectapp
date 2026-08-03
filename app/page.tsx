@@ -286,14 +286,9 @@ export default function Dashboard() {
 
   // Search state for Today's Sales
   const [salesSearch, setSalesSearch] = useState('');
-  const [selectedSalesDate, setSelectedSalesDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [selectedExpenseDate, setSelectedExpenseDate] = useState(() => new Date().toISOString().split('T')[0]);
-  
-  // Reconciliation date range states
-  const [reconciliationMode, setReconciliationMode] = useState<'single' | 'range'>('single');
-  const [reconciliationDate, setReconciliationDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [reconciliationStartDate, setReconciliationStartDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [reconciliationEndDate, setReconciliationEndDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [selectedSalesDate, setSelectedSalesDate] = useState('2026-07-16');
+  const [selectedExpenseDate, setSelectedExpenseDate] = useState('2026-07-16');
+  const [reconciliationDate, setReconciliationDate] = useState('2026-07-16');
 
   // Success Toast message
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -1282,45 +1277,26 @@ export default function Dashboard() {
   // =====================================================
   // DAY RECONCILIATION CALCULATIONS
   // =====================================================
-  const calculateDayReconciliation = (mode: 'single' | 'range', singleDate?: string, startDate?: string, endDate?: string) => {
-    // Determine which dates to filter
-    let salesToFilter = sales;
-    let expensesToFilter = expenses;
-    
-    if (mode === 'single' && singleDate) {
-      salesToFilter = sales.filter(s => s.date === singleDate);
-      expensesToFilter = expenses.filter(e => e.date === singleDate);
-    } else if (mode === 'range' && startDate && endDate) {
-      // Convert dates to comparable format
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      
-      salesToFilter = sales.filter(s => {
-        const saleDate = new Date(s.date);
-        return saleDate >= start && saleDate <= end;
-      });
-      
-      expensesToFilter = expenses.filter(e => {
-        const expenseDate = new Date(e.date);
-        return expenseDate >= start && expenseDate <= end;
-      });
-    }
+  const calculateDayReconciliation = (selectedDate: string) => {
+    // Filter sales for the selected date
+    const daySales = sales.filter(s => s.date === selectedDate);
     
     // Milk & Sales Summary
-    const totalMilkSold = salesToFilter.reduce((sum, s) => sum + s.volumeLiters, 0);
-    const totalBilledAmount = salesToFilter.reduce((sum, s) => sum + s.totalAmount, 0);
+    const totalMilkSold = daySales.reduce((sum, s) => sum + s.volumeLiters, 0);
+    const totalBilledAmount = daySales.reduce((sum, s) => sum + s.totalAmount, 0);
     
-    const creditSales = salesToFilter.filter(s => s.type === 'Credit');
-    const cashSales = salesToFilter.filter(s => s.type === 'Cash');
+    const creditSales = daySales.filter(s => s.type === 'Credit');
+    const cashSales = daySales.filter(s => s.type === 'Cash');
     
     const creditBilledAmount = creditSales.reduce((sum, s) => sum + s.totalAmount, 0);
     const cashBilledAmount = cashSales.reduce((sum, s) => sum + s.totalAmount, 0);
     
     // Expenses Summary
-    const totalExpenses = expensesToFilter.reduce((sum, e) => sum + e.amount, 0);
+    const dayExpenses = expenses.filter(e => e.date === selectedDate);
+    const totalExpenses = dayExpenses.reduce((sum, e) => sum + e.amount, 0);
     
     // Cash Position
-    const totalCashIn = salesToFilter.reduce((sum, s) => sum + s.paidAmount, 0);
+    const totalCashIn = daySales.reduce((sum, s) => sum + s.paidAmount, 0);
     const totalCashOut = totalExpenses;
     const expectedCashInHand = totalCashIn - totalCashOut;
     
@@ -1337,17 +1313,12 @@ export default function Dashboard() {
       totalCashOut,
       expectedCashInHand,
       creditOutstanding,
-      daySales: salesToFilter.length,
-      dayExpenses: expensesToFilter.length
+      daySales: daySales.length,
+      dayExpenses: dayExpenses.length
     };
   };
 
-  const reconciliation = calculateDayReconciliation(
-    reconciliationMode,
-    reconciliationMode === 'single' ? reconciliationDate : undefined,
-    reconciliationMode === 'range' ? reconciliationStartDate : undefined,
-    reconciliationMode === 'range' ? reconciliationEndDate : undefined
-  );
+  const reconciliation = calculateDayReconciliation(reconciliationDate);
 
   // Filter activities
   const filteredActivities = activities.filter(act => {
@@ -1464,6 +1435,11 @@ export default function Dashboard() {
           <p className="text-[10px] text-slate-400 font-medium text-center leading-relaxed">
             Login credentials are provided by admin. Subscription must be active.
           </p>
+          <div className="mt-3 bg-slate-50 border border-slate-100 rounded-lg p-2.5 text-[10px] text-slate-500 font-mono text-center w-full">
+            <span className="font-bold text-slate-600">Demo Access:</span><br />
+            Email: <span className="font-bold text-emerald-600">admin@danishfarm.com</span><br />
+            Password: <span className="font-bold text-emerald-600">admin</span>
+          </div>
         </div>
       </div>
     );
@@ -1530,10 +1506,20 @@ export default function Dashboard() {
             <div className="flex flex-wrap items-center gap-4 text-xs">
               <div className="flex items-center gap-2 bg-slate-800/60 border border-slate-700/50 px-3.5 py-2 rounded-xl backdrop-blur-sm">
                 <Calendar className="w-4 h-4 text-emerald-400" />
-                <span className="text-slate-200">
-                  {todayStr && new Date(todayStr).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                </span>
+                <span className="text-slate-200">Thursday, July 16, 2026</span>
               </div>
+              <div className="flex items-center gap-2 bg-slate-800/60 border border-slate-700/50 px-3.5 py-2 rounded-xl backdrop-blur-sm">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="text-slate-200 font-mono">Offline-First Synced</span>
+              </div>
+              <button 
+                onClick={resetAppToDefault}
+                title="Restore original seed data"
+                className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3.5 py-2 rounded-xl text-slate-200 hover:text-white transition-all cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-slate-400 hover:animate-spin" />
+                <span>Reset Demo</span>
+              </button>
               <button 
                 onClick={handleLogout}
                 title="Sign out from session"
@@ -3436,91 +3422,30 @@ export default function Dashboard() {
         {/* DAY RECONCILIATION TAB */}
         {dashboardTab === 'reconciliation' && (
           <div className="space-y-6">
-            {/* Reconciliation Header & Date Period Selector */}
+            {/* Reconciliation Header & Date Picker */}
             <div className="bg-slate-50/50 rounded-2xl border border-slate-200 p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Calendar className="w-5 h-5 text-blue-600" />
-                    <h3 className="font-display font-bold text-2xl text-slate-900">SELECT PERIOD</h3>
-                  </div>
+                  <h3 className="font-display font-bold text-2xl text-slate-900">📊 Day Reconciliation Report</h3>
                   <p className="text-sm text-slate-600 mt-1">Complete daily cash and milk summary</p>
                 </div>
               </div>
 
-              {/* Mode Selector - Single Day vs Date Range */}
-              <div className="mb-6 flex items-center gap-6 pb-6 border-b border-slate-200">
-                <div className="flex items-center gap-2">
+              {/* Date Picker */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-4">
+                <div className="flex-1 min-w-48">
+                  <label className="text-xs uppercase tracking-widest font-bold text-slate-600 block mb-2">Select Date for Reconciliation</label>
                   <input
-                    type="radio"
-                    id="single-day"
-                    name="period-mode"
-                    checked={reconciliationMode === 'single'}
-                    onChange={() => setReconciliationMode('single')}
-                    className="w-4 h-4 cursor-pointer"
+                    type="date"
+                    value={reconciliationDate}
+                    onChange={(e) => setReconciliationDate(e.target.value)}
+                    className="w-full px-4 py-3 bg-white border-2 border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all text-slate-800 font-semibold"
                   />
-                  <label htmlFor="single-day" className="text-sm font-semibold text-slate-700 cursor-pointer">
-                    Single Day
-                  </label>
                 </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    id="date-range"
-                    name="period-mode"
-                    checked={reconciliationMode === 'range'}
-                    onChange={() => setReconciliationMode('range')}
-                    className="w-4 h-4 cursor-pointer"
-                  />
-                  <label htmlFor="date-range" className="text-sm font-semibold text-slate-700 cursor-pointer">
-                    Date Range
-                  </label>
+                <div className="text-sm text-slate-600 font-medium">
+                  Showing data for: <span className="font-bold text-slate-900">{reconciliationDate}</span>
                 </div>
               </div>
-
-              {/* Date Inputs */}
-              {reconciliationMode === 'single' ? (
-                // Single Day Input
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-4">
-                  <div className="flex-1 min-w-48">
-                    <label className="text-xs uppercase tracking-widest font-bold text-slate-600 block mb-2">Select Date</label>
-                    <input
-                      type="date"
-                      value={reconciliationDate}
-                      onChange={(e) => setReconciliationDate(e.target.value)}
-                      className="w-full px-4 py-3 bg-white border-2 border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all text-slate-800 font-semibold"
-                    />
-                  </div>
-                  <div className="text-sm text-slate-600 font-medium">
-                    Showing data for: <span className="font-bold text-slate-900">{reconciliationDate}</span>
-                  </div>
-                </div>
-              ) : (
-                // Date Range Inputs
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-4">
-                  <div className="flex-1 min-w-48">
-                    <label className="text-xs uppercase tracking-widest font-bold text-slate-600 block mb-2">From</label>
-                    <input
-                      type="date"
-                      value={reconciliationStartDate}
-                      onChange={(e) => setReconciliationStartDate(e.target.value)}
-                      className="w-full px-4 py-3 bg-white border-2 border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all text-slate-800 font-semibold"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-48">
-                    <label className="text-xs uppercase tracking-widest font-bold text-slate-600 block mb-2">To</label>
-                    <input
-                      type="date"
-                      value={reconciliationEndDate}
-                      onChange={(e) => setReconciliationEndDate(e.target.value)}
-                      className="w-full px-4 py-3 bg-white border-2 border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all text-slate-800 font-semibold"
-                    />
-                  </div>
-                  <div className="text-sm text-slate-600 font-medium whitespace-nowrap">
-                    Showing data for: <span className="font-bold text-slate-900">{reconciliationStartDate} to {reconciliationEndDate}</span>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Milk & Sales Summary Section */}
